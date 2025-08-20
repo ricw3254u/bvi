@@ -3,75 +3,141 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rastreador GPS Simplificado</title>
+    <title>Rastreador GPS Profesional</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Leaflet CSS for the map -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
     <style>
-        body { font-family: 'Inter', sans-serif; }
+        body { 
+            font-family: 'Inter', sans-serif; 
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
         .sending-indicator::after {
             content: '.';
-            animation: dots 1s steps(5, end) infinite;
+            animation: dots 1.5s steps(5, end) infinite;
         }
         @keyframes dots {
             0%, 20% { color: rgba(0,0,0,0); text-shadow: .25em 0 0 rgba(0,0,0,0), .5em 0 0 rgba(0,0,0,0); }
-            40% { color: #4a5568; text-shadow: .25em 0 0 rgba(0,0,0,0), .5em 0 0 rgba(0,0,0,0); }
-            60% { text-shadow: .25em 0 0 #4a5568, .5em 0 0 rgba(0,0,0,0); }
-            80%, 100% { text-shadow: .25em 0 0 #4a5568, .5em 0 0 #4a5568; }
+            40% { color: currentColor; text-shadow: .25em 0 0 rgba(0,0,0,0), .5em 0 0 rgba(0,0,0,0); }
+            60% { text-shadow: .25em 0 0 currentColor, .5em 0 0 rgba(0,0,0,0); }
+            80%, 100% { text-shadow: .25em 0 0 currentColor, .5em 0 0 currentColor; }
+        }
+        /* Custom scrollbar */
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        /* Leaflet map container style */
+        #map {
+            height: 250px;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
         }
     </style>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
-<body class="bg-gray-100 text-gray-800 flex items-center justify-center min-h-screen">
-    <div class="w-full max-w-4xl mx-auto p-4 md:p-8">
-        <div class="bg-white rounded-2xl shadow-lg p-6 md:p-8">
-            <div class="text-center mb-6">
-                <h1 class="text-3xl md:text-4xl font-bold text-gray-900">Rastreador GPS Público 🛰️</h1>
-                <p class="text-gray-600 mt-2">Cualquier visitante puede enviar su ubicación a nuestra hoja de cálculo centralizada.</p>
-            </div>
+<body class="bg-slate-100 text-slate-800">
+
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <main class="w-full max-w-6xl mx-auto bg-white rounded-2xl shadow-2xl overflow-hidden grid grid-cols-1 lg:grid-cols-3">
             
-            <div class="text-center mb-8">
-                <button id="trackingButton" class="bg-blue-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-300 transition-all duration-300 ease-in-out transform hover:scale-105 disabled:bg-gray-400 disabled:cursor-not-allowed disabled:transform-none">
-                    Compartir mi Ubicación
-                </button>
-                <div id="status" class="mt-4 text-gray-600 font-medium h-6">Esperando inicio...</div>
+            <!-- Columna de Controles (Izquierda) -->
+            <div class="col-span-1 lg:col-span-1 bg-slate-50 p-8 border-b lg:border-b-0 lg:border-r border-slate-200 flex flex-col justify-between">
+                <div>
+                    <div class="text-center lg:text-left mb-8">
+                        <h1 class="text-3xl font-bold text-slate-900">Rastreador GPS</h1>
+                        <p class="text-slate-500 mt-2">Envía tu ubicación en tiempo real a nuestra plataforma.</p>
+                    </div>
+                
+                    <div class="text-center space-y-4">
+                        <button id="trackingButton" class="w-full bg-indigo-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-300 transition-all duration-300 ease-in-out transform hover:-translate-y-1 disabled:bg-slate-400 disabled:cursor-not-allowed disabled:transform-none">
+                            <span class="flex items-center justify-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" /></svg>
+                                Compartir Ubicación
+                            </span>
+                        </button>
+                        <div id="status" class="text-slate-600 font-medium h-6">Esperando inicio...</div>
+                    </div>
+
+                    <!-- Mapa en Tiempo Real -->
+                    <div class="mt-8">
+                        <h3 class="text-lg font-semibold text-slate-800 mb-3 text-center lg:text-left">Última Ubicación</h3>
+                        <div id="map"></div>
+                    </div>
+                </div>
+                 <div class="text-center text-xs text-slate-400 mt-8">
+                    © 2024 Plataforma de Rastreo. Todos los derechos reservados.
+                </div>
             </div>
-            <div>
+
+            <!-- Columna de Datos (Derecha) -->
+            <div class="col-span-1 lg:col-span-2 p-8 flex flex-col h-[75vh] lg:h-auto">
                 <div class="flex justify-between items-center mb-4">
-                    <h2 class="font-bold text-xl text-center">📍 Ubicaciones Registradas</h2>
-                    <button id="refreshButton" class="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400 transition text-sm">
+                    <h2 class="font-bold text-xl text-slate-700">📍 Ubicaciones Registradas</h2>
+                    <button id="refreshButton" class="bg-slate-200 text-slate-700 font-bold py-2 px-4 rounded-lg hover:bg-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-400 transition text-sm flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h5M20 20v-5h-5M20 4h-5v5M4 20h5v-5" /></svg>
                         Actualizar
                     </button>
                 </div>
-                <div class="overflow-x-auto bg-white rounded-lg shadow border border-gray-200">
-                    <table class="w-full text-sm text-left text-gray-600">
-                        <thead class="text-xs text-gray-700 uppercase bg-gray-100">
+                <div class="flex-grow overflow-y-auto custom-scrollbar border border-slate-200 rounded-lg shadow-inner">
+                    <table class="w-full text-sm text-left text-slate-600">
+                        <thead class="text-xs text-slate-700 uppercase bg-slate-100 sticky top-0">
                             <tr>
                                 <th scope="col" class="px-6 py-3">Timestamp</th>
                                 <th scope="col" class="px-6 py-3">Latitud</th>
                                 <th scope="col" class="px-6 py-3">Longitud</th>
                             </tr>
                         </thead>
-                        <tbody id="locationsTableBody">
-                           <tr><td colspan="3" class="text-center p-6 text-gray-500">Aún no hay datos.</td></tr>
+                        <tbody id="locationsTableBody" class="bg-white">
+                           <tr><td colspan="3" class="text-center p-8 text-slate-500">Aún no hay datos.</td></tr>
                         </tbody>
                     </table>
                 </div>
             </div>
-        </div>
+        </main>
     </div>
+
+    <!-- Leaflet JS for the map -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // --- MEJORA: La URL ahora está directamente en el código ---
             const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyGla2s5X8hz134G2-ysSgMRm7TirQQZHBPx_16QcMY7SlQSOqfrY7LIJLqqPfqhg1VnA/exec';
 
             const trackingButton = document.getElementById('trackingButton');
             const refreshButton = document.getElementById('refreshButton');
             const statusDiv = document.getElementById('status');
             const tableBody = document.getElementById('locationsTableBody');
+            const trackingButtonText = trackingButton.querySelector('span');
             let watchId = null;
 
-            // Cargar las ubicaciones existentes al abrir la página
+            // --- MAPA ---
+            let map = null;
+            let marker = null;
+
+            function initializeMap(lat, lon) {
+                if (!map) {
+                    map = L.map('map').setView([lat, lon], 15);
+                    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+                        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+                    }).addTo(map);
+                    marker = L.marker([lat, lon]).addTo(map);
+                }
+            }
+
+            function updateMap(lat, lon) {
+                if (map && marker) {
+                    const newLatLng = L.latLng(lat, lon);
+                    marker.setLatLng(newLatLng);
+                    map.setView(newLatLng, map.getZoom());
+                } else {
+                    initializeMap(lat, lon);
+                }
+            }
+            // --- FIN MAPA ---
+
             loadLocations();
             
             refreshButton.addEventListener('click', loadLocations);
@@ -80,20 +146,20 @@
                 if (watchId) {
                     navigator.geolocation.clearWatch(watchId);
                     watchId = null;
-                    trackingButton.textContent = 'Compartir mi Ubicación';
+                    trackingButtonText.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" /></svg> Compartir Ubicación`;
                     trackingButton.classList.remove('bg-red-600', 'hover:bg-red-700');
-                    trackingButton.classList.add('bg-blue-600', 'hover:bg-blue-700');
+                    trackingButton.classList.add('bg-indigo-600', 'hover:bg-indigo-700');
                     statusDiv.textContent = 'Rastreo detenido.';
                     statusDiv.classList.remove('sending-indicator');
                 } else {
                     if (!navigator.geolocation) {
-                        statusDiv.textContent = 'La geolocalización no es soportada por tu navegador.';
+                        statusDiv.textContent = 'La geolocalización no es soportada.';
                         return;
                     }
                     const options = { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 };
                     watchId = navigator.geolocation.watchPosition(handleSuccess, handleError, options);
-                    trackingButton.textContent = 'Dejar de Compartir';
-                    trackingButton.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+                    trackingButtonText.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 animate-pulse" viewBox="0 0 20 20" fill="currentColor"><path d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 9a1 1 0 000 2h6a1 1 0 100-2H7z" /></svg> Dejar de Compartir`;
+                    trackingButton.classList.remove('bg-indigo-600', 'hover:bg-indigo-700');
                     trackingButton.classList.add('bg-red-600', 'hover:bg-red-700');
                     statusDiv.textContent = 'Buscando señal GPS...';
                 }
@@ -101,30 +167,26 @@
 
             async function handleSuccess(position) {
                 const { latitude, longitude } = position.coords;
-                statusDiv.textContent = `Enviando ubicación...`;
+                statusDiv.textContent = `Enviando ubicación`;
                 statusDiv.classList.add('sending-indicator');
 
                 const lat = latitude.toFixed(6);
                 const lon = longitude.toFixed(6);
-                
                 const urlWithParams = `${APPS_SCRIPT_URL}?latitude=${lat}&longitude=${lon}`;
 
                 try {
                     const response = await fetch(urlWithParams);
                     const result = await response.json();
 
-                    if (result.status !== 'success') {
-                        throw new Error(result.message || 'El script devolvió un error.');
-                    }
+                    if (result.status !== 'success') throw new Error(result.message || 'El script devolvió un error.');
                     
-                    statusDiv.textContent = `Ubicación enviada.`;
+                    statusDiv.textContent = `Ubicación enviada correctamente.`;
                     statusDiv.classList.remove('sending-indicator');
                     
                     await loadLocations();
-
                 } catch (error) {
                     console.error('Error al enviar ubicación:', error);
-                    statusDiv.textContent = 'Error al enviar la ubicación. Revisa la consola.';
+                    statusDiv.textContent = 'Error al enviar. Revisa la consola.';
                     statusDiv.classList.remove('sending-indicator');
                 }
             }
@@ -136,7 +198,6 @@
 
             async function loadLocations() {
                 statusDiv.textContent = 'Actualizando lista...';
-
                 try {
                     const response = await fetch(APPS_SCRIPT_URL);
                     if (!response.ok) throw new Error('No se pudo obtener la data.');
@@ -145,23 +206,29 @@
                     
                     tableBody.innerHTML = ''; 
                     if (locations.length === 0) {
-                         tableBody.innerHTML = '<tr><td colspan="3" class="text-center p-6 text-gray-500">Aún no hay datos.</td></tr>';
+                         tableBody.innerHTML = '<tr><td colspan="3" class="text-center p-8 text-slate-500">Aún no hay datos registrados.</td></tr>';
+                         // Initialize map with a default location if no data
+                         initializeMap(19.0414, -98.2063); // Puebla, Mexico
                     } else {
-                        locations.reverse().forEach(loc => {
+                        const reversedLocations = locations.reverse();
+                        reversedLocations.forEach(loc => {
                             const tr = document.createElement('tr');
-                            tr.className = 'bg-white border-b hover:bg-gray-50';
+                            tr.className = 'border-b border-slate-200 hover:bg-slate-50';
                             tr.innerHTML = `
-                                <td class="px-6 py-4">${loc.timestamp || 'N/A'}</td>
+                                <td class="px-6 py-4 font-medium text-slate-800">${loc.timestamp || 'N/A'}</td>
                                 <td class="px-6 py-4">${loc.latitude || 'N/A'}</td>
                                 <td class="px-6 py-4">${loc.longitude || 'N/A'}</td>
                             `;
                             tableBody.appendChild(tr);
                         });
+                        // Update map with the latest location
+                        const latestLocation = reversedLocations[0];
+                        updateMap(latestLocation.latitude, latestLocation.longitude);
                     }
                     statusDiv.textContent = 'Lista actualizada.';
                 } catch (error) {
                     console.error('Error al cargar ubicaciones:', error);
-                    tableBody.innerHTML = '<tr><td colspan="3" class="text-center p-6 text-red-500">Error al cargar los datos.</td></tr>';
+                    tableBody.innerHTML = '<tr><td colspan="3" class="text-center p-8 text-red-500 font-semibold">Error al cargar los datos.</td></tr>';
                     statusDiv.textContent = 'Error al cargar datos.';
                 }
             }
